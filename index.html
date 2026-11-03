@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5f0">
+  <meta name="description" content="Генератор китайских прописей: примеры в нескольких строках, пиньинь, перевод и анимация порядка черт.">
+  <title>Hanzi Practice — китайские прописи</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: "LXGW WenKai GB";
+      src: url("https://cdn.jsdelivr.net/gh/lxgw/LxgwWenkaiGB-Lite@main/fonts/TTF/LXGWWenKaiGBLite-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202a36;
+      --muted: #687384;
+      --line: #e4e6e8;
+      --paper: #fff;
+      --canvas: #f4f2ed;
+      --accent: #315b50;
+      --accent-dark: #24483f;
+      --accent-soft: #e6efeb;
+      --cell-line: #b9c0c5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea, select { font: inherit; }
+    .app-shell { max-width: 1440px; margin: 0 auto; padding: 28px 28px 48px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+      color: #fff; background: var(--accent); font-family: "Noto Serif SC", serif;
+      font-size: 25px; box-shadow: 0 5px 14px #315b5028;
+    }
+    .brand h1 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .top-note { color: var(--muted); font-size: 12px; text-align: right; }
+    .layout { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px #1f29370a; }
+    .controls { padding: 22px; position: sticky; top: 18px; }
+    .panel-title { margin: 0 0 5px; font-size: 16px; letter-spacing: -.02em; }
+    .panel-subtitle { margin: 0 0 19px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .field { margin-top: 17px; }
+    .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    label, .field-label { color: #344052; font-size: 12px; font-weight: 650; }
+    .hint { color: #8a929e; font-size: 10px; font-weight: 450; }
+    textarea, select, input[type="number"], .pinyin-input {
+      width: 100%; border: 1px solid #dce1e4; border-radius: 10px; color: var(--ink); background: #fff;
+      outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    textarea { min-height: 128px; resize: vertical; padding: 12px 13px; line-height: 1.7; font-size: 15px; font-family: "Noto Serif SC", "Microsoft YaHei", serif; }
+    select, input[type="number"] { height: 40px; padding: 0 11px; font-size: 13px; }
+    textarea:focus, select:focus, input:focus { border-color: #78a294; box-shadow: 0 0 0 3px #315b5014; }
+    input:disabled { opacity: .55; cursor: not-allowed; }
+    .quick-example { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 0; border: 0; background: none; color: var(--accent); font-size: 11px; font-weight: 650; cursor: pointer; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .check-row, .field-check { display: flex; align-items: flex-start; gap: 9px; margin-top: 14px; }
+    .check-row input, .field-check input { width: 15px; height: 15px; margin: 1px 0 0; accent-color: var(--accent); }
+    .check-copy { display: grid; gap: 2px; }
+    .check-copy label { cursor: pointer; }
+    .check-copy small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .range-row { display: flex; align-items: center; gap: 10px; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .range-value { min-width: 36px; color: var(--muted); text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; }
+    input[type="color"] { width: 44px; height: 38px; padding: 3px; border: 1px solid #dce1e4; border-radius: 9px; background: #fff; cursor: pointer; }
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-presets { display: flex; gap: 7px; align-items: center; }
+    .swatch { width: 23px; height: 23px; padding: 0; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #d8dde0; cursor: pointer; }
+    .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+    .divider { height: 1px; background: #edf0f1; margin: 19px 0; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 21px; }
+    .actions #generateBtn { grid-column: 1 / -1; }
+    .btn { min-height: 42px; border: 1px solid transparent; border-radius: 10px; padding: 0 13px; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform .15s, background .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-download { background: var(--accent); color: #fff; }
+    .btn-download:hover { background: var(--accent-dark); }
+    .btn-secondary { background: #f5f7f6; color: #344052; border-color: #e3e8e5; }
+    .btn-secondary:hover { background: var(--accent-soft); }
+    .status { margin-top: 13px; min-height: 30px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .status.error { color: #a43e36; }
+    .advanced { margin-top: 17px; border: 1px solid #e7ece9; border-radius: 12px; padding: 11px 12px; background: #fbfcfb; }
+    .advanced summary { color: #344052; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .advanced-note { margin: 8px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .pinyin-editor-word { padding: 10px 0; border-top: 1px solid #edf0f1; }
+    .pinyin-editor-title { margin-bottom: 7px; color: #344052; font-family: "Noto Serif SC", serif; font-size: 16px; font-weight: 650; }
+    .pinyin-editor-chars { display: flex; flex-wrap: wrap; gap: 7px; }
+    .pinyin-edit-cell { width: 64px; display: grid; gap: 4px; }
+    .pinyin-edit-char { color: #687384; text-align: center; font-family: "Noto Serif SC", serif; font-size: 16px; }
+    .pinyin-input { height: 34px; padding: 0 5px; text-align: center; font-size: 12px; }
+    .pinyin-reset { border: 0; background: transparent; color: #748078; font-size: 10px; cursor: pointer; }
+    .reset-all { margin-top: 9px; border: 0; background: transparent; color: var(--accent); font-size: 11px; font-weight: 650; cursor: pointer; }
+    .preview-panel { min-width: 0; overflow: hidden; }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .preview-head h2 { margin: 0; font-size: 14px; }
+    .preview-meta { color: var(--muted); font-size: 11px; }
+    .preview-stage { padding: 24px; overflow-x: auto; background: #eeece7; }
+    .empty-state { min-height: 250px; display: grid; place-items: center; text-align: center; color: var(--muted); }
+    .empty-state strong { display: block; margin-bottom: 6px; color: var(--ink); font-size: 14px; }
+    .sheet {
+      width: 210mm; min-height: 297mm; margin: 0 auto 24px; padding: 11mm 15mm 10mm;
+      background: var(--paper); color: #252b31; box-shadow: 0 8px 28px #17212a18;
+      display: flex; flex-direction: column; position: relative;
+    }
+    .sheet:last-child { margin-bottom: 0; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; min-height: 8mm; margin-bottom: 4mm; border-bottom: .25mm solid #e5e8e9; padding-bottom: 2mm; }
+    .sheet-title { font-family: "Noto Serif SC", serif; font-size: 4mm; font-weight: 700; letter-spacing: .08em; }
+    .sheet-subtitle { color: #9aa1a7; font-size: 2.5mm; letter-spacing: .08em; }
+    .sheet-content { flex: 1; }
+    .word-block { margin: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; }
+    .translation-area { display: flex; align-items: flex-end; gap: 2mm; height: 7mm; margin: 0 0 1mm; color: #727b83; font-size: 2.7mm; }
+    .translation-label { white-space: nowrap; padding-bottom: .7mm; }
+    .translation-rule { flex: 1; height: 5mm; border-bottom: .25mm solid #aeb5ba; }
+    .pinyin-row, .character-row { display: grid; grid-template-columns: repeat(var(--columns), var(--cell-size)); justify-content: start; }
+    .pinyin-row { height: 5mm; align-items: end; }
+    .pinyin-cell { display: flex; justify-content: center; align-items: center; min-width: 0; overflow: visible; color: #69727d; font-family: Inter, sans-serif; font-size: 2.45mm; line-height: 1; white-space: nowrap; }
+    .character-row { height: var(--cell-size); }
+    .cell {
+      width: var(--cell-size); height: var(--cell-size); position: relative; display: grid; place-items: center;
+      border: .22mm solid var(--cell-line); background-color: #fff;
+      background-image:
+        linear-gradient(to right, transparent calc(50% - .11mm), var(--cell-line) 50%, transparent calc(50% + .11mm)),
+        linear-gradient(to bottom, transparent calc(50% - .11mm), var(--cell-line) 50%, transparent calc(50% + .11mm));
+      background-size: 100% 100%;
+    }
+    .grid-mi .cell {
+      background-image:
+        linear-gradient(to right, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
+        linear-gradient(to bottom, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
+        linear-gradient(45deg, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
+        linear-gradient(-45deg, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm));
+    }
+    .hanzi { position: relative; z-index: 1; font-size: var(--hanzi-size); line-height: 1; font-weight: 500; user-select: none; }
+    .font-kai .hanzi { font-family: "LXGW WenKai GB", "KaiTi", "Kaiti SC", "STKaiti", serif; }
+    .font-song .hanzi { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
+    .font-hei .hanzi { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .sample .hanzi { color: var(--trace-color); opacity: var(--trace-opacity); }
+    .solid-sample .hanzi { opacity: 1; }
+    .no-solid-first .solid-sample .hanzi { opacity: var(--trace-opacity); }
+    .sheet-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 3mm; padding-top: 2mm; border-top: .2mm solid #edf0f1; color: #a2a8ad; font-size: 2.3mm; }
+    .no-pinyin .pinyin-row { display: none; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 13px; height: 13px; display: inline-block; border: 1px solid #bbc2c7; background: linear-gradient(90deg, transparent 48%, #bbc2c7 49%, #bbc2c7 51%, transparent 52%), linear-gradient(0deg, transparent 48%, #bbc2c7 49%, #bbc2c7 51%, transparent 52%); }
+    .strokes-panel { grid-column: 2; min-width: 0; overflow: hidden; }
+    .stroke-intro { padding: 14px 20px 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .stroke-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 16px 20px 20px; }
+    .stroke-card { display: grid; justify-items: center; gap: 8px; padding: 12px 8px; border: 1px solid #e7ece9; border-radius: 13px; background: #fcfdfc; }
+    .stroke-char { color: #27352f; font-family: "Noto Serif SC", serif; font-size: 15px; font-weight: 650; }
+    .stroke-target { width: 112px; height: 112px; display: grid; place-items: center; color: #315b50; font-family: "Noto Serif SC", serif; font-size: 78px; line-height: 1; }
+    .stroke-target svg { width: 100%; height: 100%; }
+    .stroke-status { min-height: 15px; color: #7a8580; text-align: center; font-size: 10px; }
+    .stroke-button { min-height: 34px; padding: 0 12px; border: 1px solid #dfe8e3; border-radius: 9px; background: #edf4f0; color: #315b50; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .stroke-button:hover { background: #e2eee8; }
+    .stroke-button:disabled { opacity: .55; cursor: wait; }
+    .stroke-empty { padding: 22px; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 980px) {
+      .app-shell { padding: 18px 14px 32px; }
+      .layout { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .top-note { display: none; }
+      .preview-stage { padding: 12px; }
+      .strokes-panel { grid-column: auto; }
+    }
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      html, body { width: 210mm; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .app-shell { max-width: none; margin: 0; padding: 0; }
+      .topbar, .controls, .preview-head, .legend, .strokes-panel { display: none !important; }
+      .layout, .preview-panel, .preview-stage { display: block; margin: 0; padding: 0; border: 0; box-shadow: none; overflow: visible; background: #fff; }
+      .sheet { width: 210mm; height: 297mm; min-height: 297mm; margin: 0; padding: 11mm 15mm 10mm; box-shadow: none; break-after: page; page-break-after: always; }
+      .sheet:last-child { break-after: auto; page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">汉</div>
+        <div>
+          <h1>Hanzi Practice</h1>
+          <p>Китайские прописи · слова целиком</p>
+        </div>
+      </div>
+      <div class="top-note">Листы A4 · несколько строк образцов · пиньинь с тонами</div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel controls">
+        <h2 class="panel-title">Настройки прописей</h2>
+        <p class="panel-subtitle">Каждое слово — отдельный блок. Выберите, в скольких строках показывать образцы, а какие оставить пустыми.</p>
+
+        <div class="field">
+          <div class="field-head">
+            <label for="words">Китайские слова</label>
+            <span class="hint">через пробел или с новой строки</span>
+          </div>
+          <textarea id="words" spellcheck="false" lang="zh">你好
+学生
+中国人
+老师</textarea>
+          <button class="quick-example" id="exampleBtn" type="button">↻ Загрузить пример</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="two-col">
+          <div class="field" style="margin-top:0">
+            <div class="field-head"><label for="sampleCopies">Повторов в строке</label></div>
+            <input id="sampleCopies" type="number" min="1" max="18" value="2">
+          </div>
+          <div class="field" style="margin-top:0">
+            <div class="field-head"><label for="totalRows">Всего строк</label></div>
+            <select id="totalRows">
+              <option value="1">1 строка</option>
+              <option value="2">2 строки</option>
+              <option value="3">3 строки</option>
+              <option value="4" selected>4 строки</option>
+              <option value="5">5 строк</option>
+              <option value="6">6 строк</option>
+              <option value="7">7 строк</option>
+              <option value="8">8 строк</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="sampleRows">Строк с образцами</label><span class="hint" id="sampleRowsHint">1 из 4</span></div>
+          <select id="sampleRows">
+            <option value="1" selected>1 строка</option>
+            <option value="2">2 строки</option>
+            <option value="3">3 строки</option>
+            <option value="4">4 строки</option>
+            <option value="5">5 строк</option>
+            <option value="6">6 строк</option>
+            <option value="all">Во всех строках</option>
+          </select>
+        </div>
+        <div class="field-check">
+          <input id="fillRow" type="checkbox">
+          <div class="check-copy">
+            <label for="fillRow">Заполнить строку образцами до конца</label>
+            <small>Слово повторится столько раз, сколько целиком поместится в строке.</small>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field" style="margin-top:14px">
+            <div class="field-head"><label for="cellSize">Размер клетки</label></div>
+            <select id="cellSize">
+              <option value="8">8 мм</option>
+              <option value="9">9 мм</option>
+              <option value="10" selected>10 мм</option>
+              <option value="11">11 мм</option>
+              <option value="12">12 мм</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top:14px">
+            <div class="field-head"><label for="gridStyle">Тип сетки</label></div>
+            <select id="gridStyle">
+              <option value="tianzige" selected>田字格 — крест</option>
+              <option value="mi">米字格 — крест и диагонали</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label for="fontStyle">Стиль иероглифов</label><span class="hint">как в образце</span></div>
+          <select id="fontStyle">
+            <option value="kai" selected>楷 Kai — каллиграфический</option>
+            <option value="song">宋 Song — с засечками</option>
+            <option value="hei">黑 Hei — без засечек</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label for="traceColor">Цвет образцов</label><span class="hint">любой оттенок</span></div>
+          <div class="color-row">
+            <input id="traceColor" type="color" value="#aeb7bf" aria-label="Выбрать цвет образцов">
+            <div class="color-presets" aria-label="Готовые цвета">
+              <button class="swatch" type="button" data-color="#aeb7bf" style="background:#aeb7bf" aria-label="Серый" aria-pressed="true"></button>
+              <button class="swatch" type="button" data-color="#d98c91" style="background:#d98c91" aria-label="Красный" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-color="#8da9d6" style="background:#8da9d6" aria-label="Голубой" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-color="#91b69c" style="background:#91b69c" aria-label="Зелёный" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="traceOpacity">Насыщенность образцов</label><span class="hint" id="opacityValue">45%</span></div>
+          <div class="range-row"><input id="traceOpacity" type="range" min="15" max="100" value="45"><span class="range-value" id="opacityValueShort">45%</span></div>
+        </div>
+
+        <div class="field-check">
+          <input id="solidFirst" type="checkbox" checked>
+          <div class="check-copy">
+            <label for="solidFirst">Первый образец ярче остальных</label>
+            <small>Первый повтор слова в каждой строке будет ярче остальных.</small>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <input id="showPinyin" type="checkbox" checked>
+          <div class="check-copy">
+            <label for="showPinyin">Показывать пиньинь над каждым иероглифом</label>
+            <small>С обозначением тонов: nǐ hǎo</small>
+          </div>
+        </div>
+        <div class="check-row">
+          <input id="showTranslation" type="checkbox" checked>
+          <div class="check-copy">
+            <label for="showTranslation">Оставлять место для перевода</label>
+            <small>Строка для перевода располагается над пиньинем и словом.</small>
+          </div>
+        </div>
+
+        <details class="advanced" id="pinyinDetails">
+          <summary>Ручная корректировка пиньиня</summary>
+          <p class="advanced-note">Можно изменить чтение любого иероглифа в контексте слова. Например, 行 может читаться как xíng или háng. После изменения перейдите к следующему полю — пиньинь в прописях обновится автоматически.</p>
+          <div id="pinyinEditors"></div>
+        </details>
+
+        <div class="actions">
+          <button class="btn btn-secondary" id="generateBtn" type="button">Обновить прописи</button>
+          <button class="btn btn-download" id="downloadPdfBtn" type="button">Скачать PDF</button>
+          <button class="btn btn-secondary" id="printBtn" type="button">Печать</button>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite">Готово к работе. Пиньинь загружается…</div>
+      </aside>
+
+      <section class="panel preview-panel" aria-label="Предварительный просмотр">
+        <div class="preview-head">
+          <h2>Предварительный просмотр</h2>
+          <div class="preview-meta" id="previewMeta">Формат A4 · 1 страница</div>
+        </div>
+        <div class="preview-stage" id="previewStage">
+          <div class="empty-state"><div><strong>Ваши прописи появятся здесь</strong>Введите китайские слова слева и нажмите «Обновить прописи».</div></div>
+        </div>
+        <div class="legend">
+          <span><i></i> Клетки для письма</span>
+          <span>Образцы могут занимать одну или несколько строк</span>
+          <span>Печать: масштаб 100%</span>
+        </div>
+      </section>
+
+      <section class="panel strokes-panel" aria-label="Порядок написания черт">
+        <div class="preview-head">
+          <h2>Порядок написания черт</h2>
+          <div class="preview-meta">Hanzi Writer</div>
+        </div>
+        <p class="stroke-intro">Нажмите «Показать порядок», чтобы увидеть анимацию написания иероглифа по чертам. Данные каждого символа загружаются при первом нажатии, поэтому для этой функции нужен интернет.</p>
+        <div class="stroke-grid" id="strokeGrid">
+          <div class="stroke-empty">Добавьте китайские слова — здесь появятся их уникальные иероглифы.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const sampleWords = '你好\n学生\n中国人\n老师\n银行\n行人';
+      const fallbackPinyin = {
+        '你':'nǐ','好':'hǎo','学':'xué','生':'shēng','中':'zhōng','国':'guó','人':'rén',
+        '老':'lǎo','师':'shī','汉':'hàn','语':'yǔ','习':'xí','我':'wǒ','们':'men',
+        '他':'tā','她':'tā','是':'shì','的':'de','不':'bù','再':'zài','见':'jiàn',
+        '谢':'xiè','校':'xiào','朋':'péng','友':'yǒu','天':'tiān','气':'qì','水':'shuǐ',
+        '火':'huǒ','木':'mù','金':'jīn','土':'tǔ','月':'yuè','日':'rì','大':'dà',
+        '小':'xiǎo','家':'jiā','吃':'chī','喝':'hē','去':'qù','来':'lái','北':'běi',
+        '京':'jīng','上':'shàng','下':'xià','行':'xíng','银':'yín','银':'yín','店':'diàn'
+      };
+      const Han = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+      const manualPinyin = new Map();
+      let lastStrokeKey = null;
+
+      function parseWords(text) {
+        return text
+          .split(/[\s,，;；、]+/u)
+          .map(token => Array.from(token).filter(char => Han.test(char)).join(''))
+          .filter(Boolean);
+      }
+
+      function getAutoPinyin(word) {
+        const phraseFallback = {
+          '银行': ['yín', 'háng'],
+          '行人': ['xíng', 'rén']
+        };
+        if (phraseFallback[word]) return phraseFallback[word];
+        try {
+          if (window.pinyinPro && typeof window.pinyinPro.pinyin === 'function') {
+            const result = window.pinyinPro.pinyin(word, { type: 'array' });
+            if (Array.isArray(result)) return result;
+          }
+        } catch (error) {
+          console.warn('Не удалось получить пиньинь:', error);
+        }
+        return Array.from(word).map(char => fallbackPinyin[char] || '');
+      }
+
+      function getPinyin(word) {
+        const automatic = getAutoPinyin(word);
+        const overrides = manualPinyin.get(word) || {};
+        return automatic.map((value, index) => overrides[index] || value || '');
+      }
+
+      function buildPinyinEditors(words) {
+        const container = $('pinyinEditors');
+        const details = $('pinyinDetails');
+        const wasOpen = details.open;
+        container.replaceChildren();
+        const uniqueWords = [...new Set(words)];
+        if (!uniqueWords.length) {
+          const note = document.createElement('p');
+          note.className = 'advanced-note';
+          note.textContent = 'Сначала добавьте китайские слова.';
+          container.appendChild(note);
+          details.open = wasOpen;
+          return;
+        }
+
+        uniqueWords.forEach(word => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'pinyin-editor-word';
+          const title = document.createElement('div');
+          title.className = 'pinyin-editor-title';
+          title.textContent = word;
+          wrapper.appendChild(title);
+
+          const charsWrap = document.createElement('div');
+          charsWrap.className = 'pinyin-editor-chars';
+          const chars = Array.from(word);
+          const automatic = getAutoPinyin(word);
+          const overrides = { ...(manualPinyin.get(word) || {}) };
+
+          chars.forEach((character, index) => {
+            const field = document.createElement('div');
+            field.className = 'pinyin-edit-cell';
+            const charLabel = document.createElement('span');
+            charLabel.className = 'pinyin-edit-char';
+            charLabel.textContent = character;
+            const input = document.createElement('input');
+            input.className = 'pinyin-input';
+            input.type = 'text';
+            input.lang = 'zh-Latn';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.value = overrides[index] || automatic[index] || '';
+            input.placeholder = 'pinyin';
+            input.setAttribute('aria-label', `Пиньинь для ${character} в слове ${word}`);
+            input.addEventListener('change', () => {
+              const next = { ...(manualPinyin.get(word) || {}) };
+              const value = input.value.trim();
+              if (value) next[index] = value;
+              else delete next[index];
+              if (Object.keys(next).length) manualPinyin.set(word, next);
+              else manualPinyin.delete(word);
+              render();
+            });
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'pinyin-reset';
+            reset.textContent = 'Авто';
+            reset.title = 'Вернуть автоматический пиньинь';
+            reset.addEventListener('click', () => {
+              const next = { ...(manualPinyin.get(word) || {}) };
+              delete next[index];
+              if (Object.keys(next).length) manualPinyin.set(word, next);
+              else manualPinyin.delete(word);
+              render();
+            });
+            field.append(charLabel, input, reset);
+            charsWrap.appendChild(field);
+          });
+          wrapper.appendChild(charsWrap);
+          container.appendChild(wrapper);
+        });
+
+        if (manualPinyin.size) {
+          const resetAll = document.createElement('button');
+          resetAll.type = 'button';
+          resetAll.className = 'reset-all';
+          resetAll.textContent = 'Сбросить все изменения пиньиня';
+          resetAll.addEventListener('click', () => {
+            manualPinyin.clear();
+            render();
+          });
+          container.appendChild(resetAll);
+        }
+        details.open = wasOpen;
+      }
+
+      function makeCell(character = '', sampleMode = '') {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        if (character) {
+          if (sampleMode) cell.classList.add('sample', sampleMode === 'solid' ? 'solid-sample' : 'trace-sample');
+          const glyph = document.createElement('span');
+          glyph.className = 'hanzi';
+          glyph.textContent = character;
+          cell.appendChild(glyph);
+        }
+        return cell;
+      }
+
+      function makePinyinCell(text = '') {
+        const cell = document.createElement('div');
+        cell.className = 'pinyin-cell';
+        cell.textContent = text;
+        return cell;
+      }
+
+      function makeRow(characters, columns, sampleModes = []) {
+        const row = document.createElement('div');
+        row.className = 'character-row';
+        for (let i = 0; i < columns; i++) {
+          row.appendChild(makeCell(characters[i] || '', sampleModes[i] || ''));
+        }
+        return row;
+      }
+
+      function makePinyinRow(pinyin, columns) {
+        const row = document.createElement('div');
+        row.className = 'pinyin-row';
+        for (let i = 0; i < columns; i++) row.appendChild(makePinyinCell(pinyin[i] || ''));
+        return row;
+      }
+
+      function makeWordBlock(word, columns, totalRows, sampleRows, sampleCopies, showPinyin, showTranslation, solidFirst) {
+        const block = document.createElement('section');
+        block.className = 'word-block';
+        const chars = Array.from(word);
+        const pinyin = getPinyin(word);
+
+        if (showTranslation) {
+          const translation = document.createElement('div');
+          translation.className = 'translation-area';
+          const label = document.createElement('span');
+          label.className = 'translation-label';
+          label.textContent = 'Перевод:';
+          const rule = document.createElement('span');
+          rule.className = 'translation-rule';
+          translation.append(label, rule);
+          block.appendChild(translation);
+        }
+
+        for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
+          const isSampleRow = rowIndex < sampleRows;
+          if (!isSampleRow) {
+            block.appendChild(makeRow([], columns));
+            continue;
+          }
+
+          const repeatedChars = [];
+          const repeatedPinyin = [];
+          const sampleModes = [];
+          for (let copy = 0; copy < sampleCopies; copy++) {
+            chars.forEach((character, index) => {
+              repeatedChars.push(character);
+              repeatedPinyin.push(pinyin[index] || '');
+              sampleModes.push(copy === 0 && solidFirst ? 'solid' : 'trace');
+            });
+          }
+          if (showPinyin) block.appendChild(makePinyinRow(repeatedPinyin, columns));
+          block.appendChild(makeRow(repeatedChars, columns, sampleModes));
+        }
+        return block;
+      }
+
+      function renderStrokeGallery(words) {
+        const container = $('strokeGrid');
+        const characters = [...new Set(Array.from(words.join('')))].filter(char => Han.test(char));
+        const key = characters.join('');
+        if (key === lastStrokeKey) return;
+        lastStrokeKey = key;
+        container.replaceChildren();
+
+        if (!characters.length) {
+          const empty = document.createElement('div');
+          empty.className = 'stroke-empty';
+          empty.textContent = 'Добавьте китайские слова — здесь появятся их уникальные иероглифы.';
+          container.appendChild(empty);
+          return;
+        }
+
+        characters.forEach(character => {
+          const card = document.createElement('article');
+          card.className = 'stroke-card';
+          const title = document.createElement('div');
+          title.className = 'stroke-char';
+          title.textContent = character;
+          const target = document.createElement('div');
+          target.className = 'stroke-target';
+          target.textContent = character;
+          const status = document.createElement('div');
+          status.className = 'stroke-status';
+          status.textContent = 'Анимация ещё не загружена';
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'stroke-button';
+          button.textContent = 'Показать порядок';
+          let writer = null;
+          let loading = false;
+
+          button.addEventListener('click', () => {
+            if (loading) return;
+            if (!window.HanziWriter) {
+              status.textContent = 'Библиотека не загрузилась. Проверьте интернет и обновите страницу.';
+              status.style.color = '#a43e36';
+              return;
+            }
+            status.style.color = '';
+            if (!writer) {
+              loading = true;
+              button.disabled = true;
+              status.textContent = 'Загружаем данные иероглифа…';
+              target.replaceChildren();
+              writer = HanziWriter.create(target, character, {
+                width: 112,
+                height: 112,
+                padding: 7,
+                showCharacter: false,
+                showOutline: true,
+                strokeColor: '#315b50',
+                outlineColor: '#dce3df',
+                strokeAnimationSpeed: 1.1,
+                delayBetweenStrokes: 330,
+                onLoadCharDataSuccess: () => {
+                  loading = false;
+                  button.disabled = false;
+                  button.textContent = 'Повторить';
+                  status.textContent = 'Порядок черт загружен';
+                  writer.animateCharacter().then(() => {
+                    status.textContent = 'Готово · можно повторить';
+                  });
+                },
+                onLoadCharDataError: (reason) => {
+                  loading = false;
+                  button.disabled = false;
+                  writer = null;
+                  target.textContent = character;
+                  button.textContent = 'Попробовать снова';
+                  status.textContent = 'Для этого символа не удалось найти данные';
+                  status.style.color = '#a43e36';
+                  console.warn('Hanzi Writer: ошибка загрузки', character, reason);
+                }
+              });
+            } else {
+              button.disabled = true;
+              status.textContent = 'Анимация…';
+              writer.hideCharacter();
+              writer.animateCharacter().then(() => {
+                button.disabled = false;
+                status.textContent = 'Готово · можно повторить';
+              }).catch(() => {
+                button.disabled = false;
+                status.textContent = 'Не удалось запустить анимацию';
+              });
+            }
+          });
+
+          card.append(title, target, status, button);
+          container.appendChild(card);
+        });
+      }
+
+      function render() {
+        const words = parseWords($('words').value);
+        const stage = $('previewStage');
+        const status = $('status');
+        const cellSize = Number($('cellSize').value);
+        const totalRows = Number($('totalRows').value);
+        const requestedSampleRows = $('sampleRows').value;
+        const requestedCopies = Math.max(1, Math.min(18, Number($('sampleCopies').value) || 1));
+        const fillRow = $('fillRow').checked;
+        const columns = Math.floor(180 / cellSize);
+        const showPinyin = $('showPinyin').checked;
+        const showTranslation = $('showTranslation').checked;
+        const solidFirst = $('solidFirst').checked;
+        const gridStyle = $('gridStyle').value;
+        const fontStyle = $('fontStyle').value;
+        const traceColor = $('traceColor').value;
+        const traceOpacity = Number($('traceOpacity').value) / 100;
+        const sampleRows = requestedSampleRows === 'all'
+          ? totalRows
+          : Math.min(totalRows, Math.max(1, Number(requestedSampleRows) || 1));
+
+        $('sampleCopies').disabled = fillRow;
+        $('sampleRowsHint').textContent = `${sampleRows} из ${totalRows}`;
+        $('opacityValue').textContent = `${Math.round(traceOpacity * 100)}%`;
+        $('opacityValueShort').textContent = `${Math.round(traceOpacity * 100)}%`;
+        document.querySelectorAll('.swatch').forEach(button => {
+          button.setAttribute('aria-pressed', button.dataset.color.toLowerCase() === traceColor.toLowerCase() ? 'true' : 'false');
+        });
+        buildPinyinEditors(words);
+        renderStrokeGallery(words);
+
+        stage.replaceChildren();
+        if (!words.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.innerHTML = '<div><strong>Пока нет китайских слов</strong>Добавьте иероглифы в поле слева.</div>';
+          stage.appendChild(empty);
+          $('previewMeta').textContent = 'Нет слов';
+          status.textContent = 'Введите хотя бы одно китайское слово.';
+          status.className = 'status error';
+          return;
+        }
+
+        const tooLong = words.filter(word => Array.from(word).length > columns);
+        if (tooLong.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          const message = document.createElement('div');
+          const strong = document.createElement('strong');
+          strong.textContent = 'Некоторые слова не помещаются в строку';
+          const detail = document.createElement('div');
+          detail.textContent = `Доступно ${columns} клеток. Слишком длинные слова: ${tooLong.join(', ')}. Уменьшите размер клетки или разделите длинные слова.`;
+          message.append(strong, detail);
+          empty.appendChild(message);
+          stage.appendChild(empty);
+          $('previewMeta').textContent = 'Нужно исправить ввод';
+          status.textContent = `Слишком длинные слова для одной строки (${columns} клеток): ${tooLong.join(', ')}.`;
+          status.className = 'status error';
+          return;
+        }
+
+        const copiesByWord = words.map(word => {
+          const maxCopies = Math.max(1, Math.floor(columns / Array.from(word).length));
+          return fillRow ? maxCopies : Math.min(requestedCopies, maxCopies);
+        });
+        const groupHeight = cellSize * totalRows + (showPinyin ? 5 * sampleRows : 0) + (showTranslation ? 8 : 0) + 4;
+        const groupsPerPage = Math.max(1, Math.floor(258 / groupHeight));
+        const pages = [];
+        for (let i = 0; i < words.length; i += groupsPerPage) {
+          pages.push(words.slice(i, i + groupsPerPage).map((word, localIndex) => ({ word, copies: copiesByWord[i + localIndex] })));
+        }
+
+        pages.forEach((pageWords, pageIndex) => {
+          const sheet = document.createElement('article');
+          sheet.className = `sheet grid-${gridStyle} font-${fontStyle}` + (solidFirst ? '' : ' no-solid-first') + (showPinyin ? '' : ' no-pinyin');
+          sheet.style.setProperty('--cell-size', `${cellSize}mm`);
+          sheet.style.setProperty('--hanzi-size', `${cellSize * 0.72}mm`);
+          sheet.style.setProperty('--columns', columns);
+          sheet.style.setProperty('--trace-color', traceColor);
+          sheet.style.setProperty('--trace-opacity', traceOpacity);
+
+          const header = document.createElement('div');
+          header.className = 'sheet-header';
+          header.innerHTML = '<div class="sheet-title">汉字书写练习</div><div class="sheet-subtitle">HANZI PRACTICE · A4</div>';
+          sheet.appendChild(header);
+
+          const content = document.createElement('div');
+          content.className = 'sheet-content';
+          pageWords.forEach(({ word, copies }) => content.appendChild(makeWordBlock(
+            word, columns, totalRows, sampleRows, copies, showPinyin, showTranslation, solidFirst
+          )));
+          sheet.appendChild(content);
+
+          const footer = document.createElement('div');
+          footer.className = 'sheet-footer';
+          footer.innerHTML = `<span>先看示范，再在空格中练习</span><span>${pageIndex + 1} / ${pages.length}</span>`;
+          sheet.appendChild(footer);
+          stage.appendChild(sheet);
+        });
+
+        const totalCopies = copiesByWord.reduce((sum, count) => sum + count * sampleRows, 0);
+        $('previewMeta').textContent = `${words.length} слов · ${pages.length} ${pages.length === 1 ? 'страница' : pages.length < 5 ? 'страницы' : 'страниц'} · ${columns} клеток в строке`;
+        const pinyinReady = window.pinyinPro && typeof window.pinyinPro.pinyin === 'function';
+        const copyNote = fillRow
+          ? `Образцы заполняют ${sampleRows} строк${sampleRows === 1 ? 'у' : sampleRows < 5 ? 'и' : ''} целиком.`
+          : `В каждой из ${sampleRows} строк с образцами — до ${requestedCopies} повторений.`;
+        if (showPinyin && !pinyinReady) {
+          status.textContent = `Готово: ${words.length} слов. ${copyNote} Автоматический пиньинь ограничен встроенным словарём; подключитесь к интернету для полного словаря.`;
+          status.className = 'status';
+        } else {
+          status.textContent = `Готово: ${words.length} слов, ${totalCopies} повторений образцов, ${totalRows - sampleRows} пустых строк на слово. ${copyNote}`;
+          status.className = 'status';
+        }
+      }
+
+      $('generateBtn').addEventListener('click', render);
+
+      $('downloadPdfBtn').addEventListener('click', async () => {
+        const button = $('downloadPdfBtn');
+        const status = $('status');
+        render();
+        const sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
+        if (!sheets.length) {
+          status.textContent = 'Сначала добавьте китайские слова, чтобы сформировать PDF.';
+          status.className = 'status error';
+          return;
+        }
+        if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+          status.textContent = 'Не удалось загрузить модуль PDF. Проверьте подключение к интернету и обновите страницу.';
+          status.className = 'status error';
+          return;
+        }
+
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Создаём PDF…';
+        status.textContent = `Подготавливаем ${sheets.length} ${sheets.length === 1 ? 'страницу' : 'страницы'} к скачиванию…`;
+        status.className = 'status';
+
+        try {
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+
+          for (let index = 0; index < sheets.length; index++) {
+            const canvas = await window.html2canvas(sheets[index], {
+              scale: 2.5,
+              backgroundColor: '#ffffff',
+              useCORS: true,
+              logging: false,
+              scrollX: 0,
+              scrollY: 0
+            });
+            const image = canvas.toDataURL('image/jpeg', 0.96);
+            if (index > 0) pdf.addPage('a4', 'portrait');
+            pdf.addImage(image, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+            status.textContent = `Готовим PDF: страница ${index + 1} из ${sheets.length}…`;
+          }
+
+          pdf.save('hanzi-practice.pdf');
+          status.textContent = `PDF готов: ${sheets.length} ${sheets.length === 1 ? 'страница сохранена' : 'страниц сохранено'}.`;
+          status.className = 'status';
+        } catch (error) {
+          console.error('Не удалось создать PDF:', error);
+          status.textContent = 'Не удалось создать PDF. Попробуйте обновить страницу или воспользоваться кнопкой «Печать». ' + (error && error.message ? error.message : '');
+          status.className = 'status error';
+        } finally {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      });
+
+      $('printBtn').addEventListener('click', () => {
+        if (!$('previewStage').querySelector('.sheet')) render();
+        if ($('previewStage').querySelector('.sheet')) window.print();
+      });
+      $('exampleBtn').addEventListener('click', () => {
+        $('words').value = sampleWords;
+        render();
+      });
+      ['sampleCopies','totalRows','sampleRows','fillRow','cellSize','gridStyle','fontStyle','traceColor','traceOpacity','showPinyin','showTranslation','solidFirst'].forEach(id => {
+        $(id).addEventListener('change', render);
+        $(id).addEventListener('input', render);
+      });
+      document.querySelectorAll('.swatch').forEach(button => {
+        button.addEventListener('click', () => {
+          $('traceColor').value = button.dataset.color;
+          render();
+        });
+      });
+      $('words').addEventListener('input', () => {
+        window.clearTimeout(window.__hanziRenderTimer);
+        window.__hanziRenderTimer = window.setTimeout(render, 350);
+      });
+
+      render();
+      window.addEventListener('load', render);
+    })();
+  </script>
+</body>
+</html>

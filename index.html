@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5f0">
-  <meta name="description" content="Генератор китайских прописей: гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
-  <title>Hanzi Practice 4.1 — китайские прописи</title>
+  <meta name="description" content="Генератор китайских прописей: чёткий PDF, гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
+  <title>Hanzi Practice 4.2 — китайские прописи</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,20 +171,15 @@
     .pinyin-row { height: var(--pinyin-height, 5mm); align-items: end; }
     .pinyin-cell { display: flex; justify-content: center; align-items: center; min-width: 0; overflow: visible; color: #69727d; font-family: Inter, sans-serif; font-size: 2.45mm; line-height: 1; white-space: nowrap; }
     .character-row { height: var(--cell-size); }
+    /* Grid lines are real inline SVG strokes, not CSS gradients. This keeps
+       the worksheet crisp in html2canvas/jsPDF and in browser printing. */
     .cell {
       width: var(--cell-size); height: var(--cell-size); position: relative; display: grid; place-items: center;
-      border: .22mm solid var(--cell-line); background-color: #fff;
-      background-image:
-        linear-gradient(to right, transparent calc(50% - .11mm), var(--cell-line) 50%, transparent calc(50% + .11mm)),
-        linear-gradient(to bottom, transparent calc(50% - .11mm), var(--cell-line) 50%, transparent calc(50% + .11mm));
-      background-size: 100% 100%;
+      border: .22mm solid var(--cell-line); background: #fff; overflow: hidden;
     }
-    .grid-mi .cell {
-      background-image:
-        linear-gradient(to right, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
-        linear-gradient(to bottom, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
-        linear-gradient(45deg, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm)),
-        linear-gradient(-45deg, transparent calc(50% - .10mm), var(--cell-line) 50%, transparent calc(50% + .10mm));
+    .grid-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      display: block; overflow: hidden; pointer-events: none; z-index: 0;
     }
     .hanzi { position: relative; z-index: 1; font-size: var(--hanzi-size); line-height: 1; font-weight: 500; user-select: none; }
     .font-kai .hanzi { font-family: "LXGW WenKai GB", "KaiTi", "Kaiti SC", "STKaiti", serif; }
@@ -236,21 +231,12 @@
       height: var(--stroke-step-size);
       min-width: 0;
       border: .2mm solid #b9c0c5;
-      background-color: #fff;
-      background-image:
-        linear-gradient(to right, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
-        linear-gradient(to bottom, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm));
+      background: #fff;
       overflow: hidden;
     }
-    .grid-mi .stroke-step {
-      background-image:
-        linear-gradient(to right, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
-        linear-gradient(to bottom, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
-        linear-gradient(45deg, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
-        linear-gradient(-45deg, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm));
-    }
-    .stroke-step svg {
+    .stroke-step > svg:not(.grid-overlay) {
       position: absolute;
+      z-index: 1;
       inset: .25mm;
       width: calc(100% - .5mm);
       height: calc(100% - .5mm);
@@ -662,9 +648,37 @@
         details.open = wasOpen;
       }
 
-      function makeCell(character = '', sampleMode = '') {
+      function makeGridOverlay(gridStyle = 'tianzige', color = '#b9c0c5', strokeWidth = 2.2) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'grid-overlay');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const lines = [
+          [50, 0, 50, 100],
+          [0, 50, 100, 50]
+        ];
+        if (gridStyle === 'mi') {
+          lines.push([0, 0, 100, 100], [0, 100, 100, 0]);
+        }
+        lines.forEach(([x1, y1, x2, y2]) => {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', x1);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('stroke', color);
+          line.setAttribute('stroke-width', strokeWidth);
+          line.setAttribute('stroke-linecap', 'butt');
+          svg.appendChild(line);
+        });
+        return svg;
+      }
+
+      function makeCell(character = '', sampleMode = '', gridStyle = 'tianzige') {
         const cell = document.createElement('div');
         cell.className = 'cell';
+        cell.appendChild(makeGridOverlay(gridStyle, '#b9c0c5', 2.2));
         if (character) {
           if (sampleMode) cell.classList.add('sample', sampleMode === 'solid' ? 'solid-sample' : 'trace-sample');
           const glyph = document.createElement('span');
@@ -682,11 +696,11 @@
         return cell;
       }
 
-      function makeRow(characters, columns, sampleModes = []) {
+      function makeRow(characters, columns, sampleModes = [], gridStyle = 'tianzige') {
         const row = document.createElement('div');
         row.className = 'character-row';
         for (let i = 0; i < columns; i++) {
-          row.appendChild(makeCell(characters[i] || '', sampleModes[i] || ''));
+          row.appendChild(makeCell(characters[i] || '', sampleModes[i] || '', gridStyle));
         }
         return row;
       }
@@ -712,10 +726,11 @@
         return strokeDataCache.get(character);
       }
 
-      function makeStrokeStep(strokes, stepIndex, stepSize) {
+      function makeStrokeStep(strokes, stepIndex, stepSize, gridStyle = 'tianzige') {
         const cell = document.createElement('div');
         cell.className = 'stroke-step';
         cell.style.setProperty('--stroke-step-size', `${stepSize}mm`);
+        cell.appendChild(makeGridOverlay(gridStyle, '#d6dadd', 1.2));
 
         const number = document.createElement('span');
         number.className = 'stroke-step-number';
@@ -742,7 +757,7 @@
         return cell;
       }
 
-      async function renderStrokeGuide(container, word, version) {
+      async function renderStrokeGuide(container, word, version, gridStyle) {
         const uniqueCharacters = [...new Set(Array.from(word))];
         try {
           const loaded = await Promise.all(uniqueCharacters.map(async character => ({
@@ -780,7 +795,7 @@
             const availableWidth = 172;
             const gap = 0.55;
             const stepSize = Math.min(9, (availableWidth - gap * (strokes.length - 1)) / strokes.length);
-            strokes.forEach((_, index) => sequence.appendChild(makeStrokeStep(strokes, index, stepSize)));
+            strokes.forEach((_, index) => sequence.appendChild(makeStrokeStep(strokes, index, stepSize, gridStyle)));
             row.appendChild(sequence);
             container.appendChild(row);
           });
@@ -795,7 +810,7 @@
         }
       }
 
-      function makeWordBlock(word, columns, totalRows, sampleRows, sampleCopies, showPinyin, showTranslation, solidFirst, showStrokeGuide, version, strokeGuideTasks) {
+      function makeWordBlock(word, columns, totalRows, sampleRows, sampleCopies, showPinyin, showTranslation, solidFirst, showStrokeGuide, version, strokeGuideTasks, gridStyle) {
         const block = document.createElement('section');
         block.className = 'word-block';
         const chars = Array.from(word);
@@ -821,13 +836,13 @@
           loading.textContent = 'Загружаем порядок черт…';
           guide.appendChild(loading);
           block.appendChild(guide);
-          strokeGuideTasks.push(renderStrokeGuide(guide, word, version));
+          strokeGuideTasks.push(renderStrokeGuide(guide, word, version, gridStyle));
         }
 
         for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
           const isSampleRow = rowIndex < sampleRows;
           if (!isSampleRow) {
-            block.appendChild(makeRow([], columns));
+            block.appendChild(makeRow([], columns, [], gridStyle));
             continue;
           }
 
@@ -842,7 +857,7 @@
             });
           }
           if (showPinyin) block.appendChild(makePinyinRow(repeatedPinyin, columns));
-          block.appendChild(makeRow(repeatedChars, columns, sampleModes));
+          block.appendChild(makeRow(repeatedChars, columns, sampleModes, gridStyle));
         }
         return block;
       }
@@ -1059,7 +1074,7 @@
           content.className = 'sheet-content';
           pageWords.forEach(({ word, copies }) => content.appendChild(makeWordBlock(
             word, columns, totalRows, sampleRows, copies, showPinyin, showTranslation, solidFirst,
-            showStrokeGuide, version, strokeGuideTasks
+            showStrokeGuide, version, strokeGuideTasks, gridStyle
           )));
           sheet.appendChild(content);
 
@@ -1123,16 +1138,16 @@
 
           for (let index = 0; index < sheets.length; index++) {
             const canvas = await window.html2canvas(sheets[index], {
-              scale: 2.5,
+              scale: 3,
               backgroundColor: '#ffffff',
               useCORS: true,
               logging: false,
               scrollX: 0,
               scrollY: 0
             });
-            const image = canvas.toDataURL('image/jpeg', 0.96);
+            const image = canvas.toDataURL('image/png');
             if (index > 0) pdf.addPage('a4', 'portrait');
-            pdf.addImage(image, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+            pdf.addImage(image, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
             status.textContent = `Готовим PDF: страница ${index + 1} из ${sheets.length}…`;
           }
 

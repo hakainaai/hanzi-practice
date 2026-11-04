@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5f0">
-  <meta name="description" content="Генератор китайских прописей: примеры в нескольких строках, пиньинь, перевод и анимация порядка черт.">
-  <title>Hanzi Practice 4.0 — китайские прописи</title>
+  <meta name="description" content="Генератор китайских прописей: гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
+  <title>Hanzi Practice 4.1 — китайские прописи</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,21 +120,55 @@
     .empty-state { min-height: 250px; display: grid; place-items: center; text-align: center; color: var(--muted); }
     .empty-state strong { display: block; margin-bottom: 6px; color: var(--ink); font-size: 14px; }
     .sheet {
-      width: 210mm; min-height: 297mm; margin: 0 auto 24px; padding: 11mm 15mm 10mm;
+      width: 210mm; min-height: 297mm; margin: 0 auto 24px;
+      padding: var(--page-top, 11mm) 15mm var(--page-bottom, 10mm);
       background: var(--paper); color: #252b31; box-shadow: 0 8px 28px #17212a18;
       display: flex; flex-direction: column; position: relative;
     }
     .sheet:last-child { margin-bottom: 0; }
-    .sheet-header { display: flex; justify-content: space-between; align-items: center; min-height: 8mm; margin-bottom: 4mm; border-bottom: .25mm solid #e5e8e9; padding-bottom: 2mm; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; min-height: 8mm; margin-bottom: var(--header-gap, 4mm); border-bottom: .25mm solid #e5e8e9; padding-bottom: 2mm; }
+    /* Density presets only change whitespace and text-row spacing. Practice cells stay exactly the selected size. */
+    .sheet.density-compact {
+      --page-top: 8mm;
+      --page-bottom: 7mm;
+      --header-gap: 2mm;
+      --block-gap: 1.8mm;
+      --translation-height: 6.2mm;
+      --translation-gap: .4mm;
+      --pinyin-height: 4.3mm;
+      --stroke-guide-gap: .9mm;
+      --stroke-guide-pad-top: .55mm;
+      --stroke-guide-pad-bottom: .65mm;
+      --stroke-heading-gap: .55mm;
+      --stroke-row-gap: .25mm;
+      --footer-gap: 1.8mm;
+      --footer-padding: 1.2mm;
+    }
+    .sheet.density-dense {
+      --page-top: 6.5mm;
+      --page-bottom: 6mm;
+      --header-gap: 1mm;
+      --block-gap: .7mm;
+      --translation-height: 5.5mm;
+      --translation-gap: .2mm;
+      --pinyin-height: 3.8mm;
+      --stroke-guide-gap: .45mm;
+      --stroke-guide-pad-top: .2mm;
+      --stroke-guide-pad-bottom: .25mm;
+      --stroke-heading-gap: .25mm;
+      --stroke-row-gap: .1mm;
+      --footer-gap: 1mm;
+      --footer-padding: .7mm;
+    }
     .sheet-title { font-family: "Noto Serif SC", serif; font-size: 4mm; font-weight: 700; letter-spacing: .08em; }
     .sheet-subtitle { color: #9aa1a7; font-size: 2.5mm; letter-spacing: .08em; }
     .sheet-content { flex: 1; }
-    .word-block { margin: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; }
-    .translation-area { display: flex; align-items: flex-end; gap: 2mm; height: 7mm; margin: 0 0 1mm; color: #727b83; font-size: 2.7mm; }
+    .word-block { margin: 0 0 var(--block-gap, 4mm); break-inside: avoid; page-break-inside: avoid; }
+    .translation-area { display: flex; align-items: flex-end; gap: 2mm; height: var(--translation-height, 7mm); margin: 0 0 var(--translation-gap, 1mm); color: #727b83; font-size: 2.7mm; }
     .translation-label { white-space: nowrap; padding-bottom: .7mm; }
     .translation-rule { flex: 1; height: 5mm; border-bottom: .25mm solid #aeb5ba; }
     .pinyin-row, .character-row { display: grid; grid-template-columns: repeat(var(--columns), var(--cell-size)); justify-content: start; }
-    .pinyin-row { height: 5mm; align-items: end; }
+    .pinyin-row { height: var(--pinyin-height, 5mm); align-items: end; }
     .pinyin-cell { display: flex; justify-content: center; align-items: center; min-width: 0; overflow: visible; color: #69727d; font-family: Inter, sans-serif; font-size: 2.45mm; line-height: 1; white-space: nowrap; }
     .character-row { height: var(--cell-size); }
     .cell {
@@ -160,12 +194,12 @@
     .solid-sample .hanzi { opacity: 1; }
     .no-solid-first .solid-sample .hanzi { opacity: var(--trace-opacity); }
     .stroke-guide {
-      margin: 0 0 1.6mm;
-      padding: 1.2mm 0 1.4mm;
+      margin: 0 0 var(--stroke-guide-gap, 1.6mm);
+      padding: var(--stroke-guide-pad-top, 1.2mm) 0 var(--stroke-guide-pad-bottom, 1.4mm);
       border-bottom: .2mm solid #edf0f1;
     }
     .stroke-guide-heading {
-      margin: 0 0 .8mm;
+      margin: 0 0 var(--stroke-heading-gap, .8mm);
       color: #899199;
       font-size: 2.15mm;
       letter-spacing: .02em;
@@ -177,6 +211,7 @@
       min-height: 8mm;
       margin: 0 0 .7mm;
     }
+    .stroke-guide-character { margin-bottom: var(--stroke-row-gap, .7mm); }
     .stroke-guide-character:last-child { margin-bottom: 0; }
     .stroke-guide-glyph {
       flex: 0 0 6mm;
@@ -239,7 +274,7 @@
       line-height: 1.3;
     }
     .stroke-guide-status.error { color: #a43e36; }
-    .sheet-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 3mm; padding-top: 2mm; border-top: .2mm solid #edf0f1; color: #a2a8ad; font-size: 2.3mm; }
+    .sheet-footer { display: flex; justify-content: space-between; align-items: center; margin-top: var(--footer-gap, 3mm); padding-top: var(--footer-padding, 2mm); border-top: .2mm solid #edf0f1; color: #a2a8ad; font-size: 2.3mm; }
     .no-pinyin .pinyin-row { display: none; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -271,7 +306,7 @@
       .app-shell { max-width: none; margin: 0; padding: 0; }
       .topbar, .controls, .preview-head, .legend, .strokes-panel { display: none !important; }
       .layout, .preview-panel, .preview-stage { display: block; margin: 0; padding: 0; border: 0; box-shadow: none; overflow: visible; background: #fff; }
-      .sheet { width: 210mm; height: 297mm; min-height: 297mm; margin: 0; padding: 11mm 15mm 10mm; box-shadow: none; break-after: page; page-break-after: always; }
+      .sheet { width: 210mm; height: 297mm; min-height: 297mm; margin: 0; padding: var(--page-top, 11mm) 15mm var(--page-bottom, 10mm); box-shadow: none; break-after: page; page-break-after: always; }
       .sheet:last-child { break-after: auto; page-break-after: auto; }
     }
   </style>
@@ -283,10 +318,10 @@
         <div class="brand-mark">汉</div>
         <div>
           <h1>Hanzi Practice</h1>
-          <p>Китайские прописи · слова целиком</p>
+          <p>Китайские прописи · слова целиком · версия 4.1</p>
         </div>
       </div>
-      <div class="top-note">Листы A4 · пиньинь · порядок черт · PDF</div>
+      <div class="top-note">Листы A4 · гибкая компактность · пиньинь · PDF</div>
     </header>
 
     <div class="layout">
@@ -344,6 +379,19 @@
             <label for="fillRow">Заполнить строку образцами до конца</label>
             <small>Слово повторится столько раз, сколько целиком поместится в строке.</small>
           </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head">
+            <label for="density">Компактность листа</label>
+            <span class="hint">клетки не меняются</span>
+          </div>
+          <select id="density">
+            <option value="comfortable" selected>Свободный — как сейчас</option>
+            <option value="compact">Компактный — больше слов</option>
+            <option value="dense">Максимальный — максимум слов</option>
+          </select>
+          <small class="hint" style="display:block; line-height:1.5; margin-top:6px;">Меняются только поля и расстояния между блоками. Размер клеток и иероглифов остаётся прежним.</small>
         </div>
 
         <div class="two-col">
@@ -478,6 +526,20 @@
         '京':'jīng','上':'shàng','下':'xià','行':'xíng','银':'yín','银':'yín','店':'diàn'
       };
       const Han = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+      const densitySettings = {
+        comfortable: {
+          pageCapacity: 258, pinyinHeight: 5, translationHeight: 8,
+          blockGap: 4, strokeRowHeight: 10, strokeBase: 4
+        },
+        compact: {
+          pageCapacity: 266, pinyinHeight: 4.3, translationHeight: 6.6,
+          blockGap: 1.8, strokeRowHeight: 9.5, strokeBase: 4
+        },
+        dense: {
+          pageCapacity: 271, pinyinHeight: 3.8, translationHeight: 5.7,
+          blockGap: 0.7, strokeRowHeight: 9.25, strokeBase: 3.5
+        }
+      };
       const manualPinyin = new Map();
       const strokeDataCache = new Map();
       let lastStrokeKey = null;
@@ -902,6 +964,8 @@
         const fontStyle = $('fontStyle').value;
         const traceColor = $('traceColor').value;
         const traceOpacity = Number($('traceOpacity').value) / 100;
+        const density = $('density').value;
+        const densityConfig = densitySettings[density] || densitySettings.comfortable;
         const sampleRows = requestedSampleRows === 'all'
           ? totalRows
           : Math.min(totalRows, Math.max(1, Number(requestedSampleRows) || 1));
@@ -950,21 +1014,36 @@
           const maxCopies = Math.max(1, Math.floor(columns / Array.from(word).length));
           return fillRow ? maxCopies : Math.min(requestedCopies, maxCopies);
         });
-        const maxStrokeGuideRows = showStrokeGuide
-          ? Math.max(0, ...words.map(word => new Set(Array.from(word)).size))
-          : 0;
-        const groupHeight = cellSize * totalRows + (showPinyin ? 5 * sampleRows : 0)
-          + (showTranslation ? 8 : 0) + (showStrokeGuide ? maxStrokeGuideRows * 10 + 4 : 0) + 4;
-        const groupsPerPage = Math.max(1, Math.floor(258 / groupHeight));
+        // Estimate each word separately, then pack blocks into pages in order.
+        // This uses the available space more efficiently when stroke guides have different lengths.
+        // The practice-cell size is never scaled by the density setting.
+        const estimateWordHeight = (word) => {
+          const strokeRows = showStrokeGuide ? new Set(Array.from(word)).size : 0;
+          return cellSize * totalRows
+            + (showPinyin ? densityConfig.pinyinHeight * sampleRows : 0)
+            + (showTranslation ? densityConfig.translationHeight : 0)
+            + (showStrokeGuide ? strokeRows * densityConfig.strokeRowHeight + densityConfig.strokeBase : 0)
+            + densityConfig.blockGap;
+        };
         const pages = [];
+        let currentPage = [];
+        let currentPageHeight = 0;
+        words.forEach((word, index) => {
+          const wordHeight = estimateWordHeight(word);
+          if (currentPage.length && currentPageHeight + wordHeight > densityConfig.pageCapacity) {
+            pages.push(currentPage);
+            currentPage = [];
+            currentPageHeight = 0;
+          }
+          currentPage.push({ word, copies: copiesByWord[index] });
+          currentPageHeight += wordHeight;
+        });
+        if (currentPage.length) pages.push(currentPage);
         const strokeGuideTasks = [];
-        for (let i = 0; i < words.length; i += groupsPerPage) {
-          pages.push(words.slice(i, i + groupsPerPage).map((word, localIndex) => ({ word, copies: copiesByWord[i + localIndex] })));
-        }
 
         pages.forEach((pageWords, pageIndex) => {
           const sheet = document.createElement('article');
-          sheet.className = `sheet grid-${gridStyle} font-${fontStyle}` + (solidFirst ? '' : ' no-solid-first') + (showPinyin ? '' : ' no-pinyin');
+          sheet.className = `sheet density-${density} grid-${gridStyle} font-${fontStyle}` + (solidFirst ? '' : ' no-solid-first') + (showPinyin ? '' : ' no-pinyin');
           sheet.style.setProperty('--cell-size', `${cellSize}mm`);
           sheet.style.setProperty('--hanzi-size', `${cellSize * 0.72}mm`);
           sheet.style.setProperty('--columns', columns);
@@ -993,7 +1072,8 @@
         pendingStrokeGuideTasks = Promise.all(strokeGuideTasks);
 
         const totalCopies = copiesByWord.reduce((sum, count) => sum + count * sampleRows, 0);
-        $('previewMeta').textContent = `${words.length} слов · ${pages.length} ${pages.length === 1 ? 'страница' : pages.length < 5 ? 'страницы' : 'страниц'} · ${columns} клеток в строке`;
+        const densityLabel = density === 'dense' ? 'максимальная плотность' : density === 'compact' ? 'компактно' : 'свободно';
+        $('previewMeta').textContent = `${words.length} слов · ${pages.length} ${pages.length === 1 ? 'страница' : pages.length < 5 ? 'страницы' : 'страниц'} · ${columns} клеток в строке · ${densityLabel}`;
         const pinyinReady = window.pinyinPro && typeof window.pinyinPro.pinyin === 'function';
         const copyNote = fillRow
           ? `Образцы заполняют ${sampleRows} строк${sampleRows === 1 ? 'у' : sampleRows < 5 ? 'и' : ''} целиком.`
@@ -1003,7 +1083,7 @@
           status.className = 'status';
         } else {
           const guideNote = showStrokeGuide ? ' Схемы порядка черт добавлены перед прописями.' : '';
-          status.textContent = `Готово: ${words.length} слов, ${totalCopies} повторений образцов, ${totalRows - sampleRows} пустых строк на слово. ${copyNote}${guideNote}`;
+          status.textContent = `Готово: ${words.length} слов, ${totalCopies} повторений образцов, ${totalRows - sampleRows} пустых строк на слово. ${copyNote} Плотность: ${densityLabel}.${guideNote}`;
           status.className = 'status';
         }
       }
@@ -1077,7 +1157,7 @@
         $('words').value = sampleWords;
         render();
       });
-      ['sampleCopies','totalRows','sampleRows','fillRow','cellSize','gridStyle','fontStyle','traceColor','traceOpacity','showPinyin','showTranslation','showStrokeGuide','solidFirst'].forEach(id => {
+      ['sampleCopies','totalRows','sampleRows','fillRow','density','cellSize','gridStyle','fontStyle','traceColor','traceOpacity','showPinyin','showTranslation','showStrokeGuide','solidFirst'].forEach(id => {
         $(id).addEventListener('change', render);
         $(id).addEventListener('input', render);
       });

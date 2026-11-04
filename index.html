@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5f0">
   <meta name="description" content="Генератор китайских прописей: примеры в нескольких строках, пиньинь, перевод и анимация порядка черт.">
-  <title>Hanzi Practice — китайские прописи</title>
+  <title>Hanzi Practice 4.0 — китайские прописи</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,6 +159,86 @@
     .sample .hanzi { color: var(--trace-color); opacity: var(--trace-opacity); }
     .solid-sample .hanzi { opacity: 1; }
     .no-solid-first .solid-sample .hanzi { opacity: var(--trace-opacity); }
+    .stroke-guide {
+      margin: 0 0 1.6mm;
+      padding: 1.2mm 0 1.4mm;
+      border-bottom: .2mm solid #edf0f1;
+    }
+    .stroke-guide-heading {
+      margin: 0 0 .8mm;
+      color: #899199;
+      font-size: 2.15mm;
+      letter-spacing: .02em;
+    }
+    .stroke-guide-character {
+      display: flex;
+      align-items: center;
+      gap: 1mm;
+      min-height: 8mm;
+      margin: 0 0 .7mm;
+    }
+    .stroke-guide-character:last-child { margin-bottom: 0; }
+    .stroke-guide-glyph {
+      flex: 0 0 6mm;
+      width: 6mm;
+      color: #38443f;
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 4.4mm;
+      line-height: 1;
+      text-align: center;
+    }
+    .stroke-guide-sequence {
+      display: flex;
+      flex: 1 1 auto;
+      align-items: center;
+      gap: .55mm;
+      min-width: 0;
+    }
+    .stroke-step {
+      position: relative;
+      flex: 0 0 var(--stroke-step-size);
+      width: var(--stroke-step-size);
+      height: var(--stroke-step-size);
+      min-width: 0;
+      border: .2mm solid #b9c0c5;
+      background-color: #fff;
+      background-image:
+        linear-gradient(to right, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
+        linear-gradient(to bottom, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm));
+      overflow: hidden;
+    }
+    .grid-mi .stroke-step {
+      background-image:
+        linear-gradient(to right, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
+        linear-gradient(to bottom, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
+        linear-gradient(45deg, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm)),
+        linear-gradient(-45deg, transparent calc(50% - .08mm), #d6dadd 50%, transparent calc(50% + .08mm));
+    }
+    .stroke-step svg {
+      position: absolute;
+      inset: .25mm;
+      width: calc(100% - .5mm);
+      height: calc(100% - .5mm);
+      overflow: visible;
+    }
+    .stroke-step-number {
+      position: absolute;
+      z-index: 2;
+      top: .1mm;
+      left: .35mm;
+      color: #7c858b;
+      font-family: Arial, sans-serif;
+      font-size: 1.55mm;
+      line-height: 1;
+      background: #ffffffd9;
+      padding: 0 .15mm;
+    }
+    .stroke-guide-status {
+      color: #8b9298;
+      font-size: 2.1mm;
+      line-height: 1.3;
+    }
+    .stroke-guide-status.error { color: #a43e36; }
     .sheet-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 3mm; padding-top: 2mm; border-top: .2mm solid #edf0f1; color: #a2a8ad; font-size: 2.3mm; }
     .no-pinyin .pinyin-row { display: none; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
@@ -206,7 +286,7 @@
           <p>Китайские прописи · слова целиком</p>
         </div>
       </div>
-      <div class="top-note">Листы A4 · несколько строк образцов · пиньинь с тонами</div>
+      <div class="top-note">Листы A4 · пиньинь · порядок черт · PDF</div>
     </header>
 
     <div class="layout">
@@ -334,6 +414,13 @@
             <small>Строка для перевода располагается над пиньинем и словом.</small>
           </div>
         </div>
+        <div class="check-row">
+          <input id="showStrokeGuide" type="checkbox">
+          <div class="check-copy">
+            <label for="showStrokeGuide">Показывать порядок черт перед прописями</label>
+            <small>Перед каждой записью появится пошаговая схема: в каждой следующей клетке добавляется очередная черта. Данные загружаются из Hanzi Writer.</small>
+          </div>
+        </div>
 
         <details class="advanced" id="pinyinDetails">
           <summary>Ручная корректировка пиньиня</summary>
@@ -367,9 +454,9 @@
       <section class="panel strokes-panel" aria-label="Порядок написания черт">
         <div class="preview-head">
           <h2>Порядок написания черт</h2>
-          <div class="preview-meta">Hanzi Writer</div>
+          <div class="preview-meta">Hanzi Writer · схема + анимация</div>
         </div>
-        <p class="stroke-intro">Нажмите «Показать порядок», чтобы увидеть анимацию написания иероглифа по чертам. Данные каждого символа загружаются при первом нажатии, поэтому для этой функции нужен интернет.</p>
+        <p class="stroke-intro">Здесь можно посмотреть анимацию написания. Дополнительно можно включить статическую пошаговую схему прямо на листе перед прописями. Данные символов загружаются из Hanzi Writer при подключении к интернету.</p>
         <div class="stroke-grid" id="strokeGrid">
           <div class="stroke-empty">Добавьте китайские слова — здесь появятся их уникальные иероглифы.</div>
         </div>
@@ -392,7 +479,10 @@
       };
       const Han = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
       const manualPinyin = new Map();
+      const strokeDataCache = new Map();
       let lastStrokeKey = null;
+      let renderVersion = 0;
+      let pendingStrokeGuideTasks = Promise.resolve();
 
       function parseWords(text) {
         return text
@@ -546,7 +636,104 @@
         return row;
       }
 
-      function makeWordBlock(word, columns, totalRows, sampleRows, sampleCopies, showPinyin, showTranslation, solidFirst) {
+      function loadStrokeData(character) {
+        if (!window.HanziWriter || typeof window.HanziWriter.loadCharacterData !== 'function') {
+          return Promise.reject(new Error('Библиотека Hanzi Writer ещё не загружена.'));
+        }
+        if (!strokeDataCache.has(character)) {
+          const request = window.HanziWriter.loadCharacterData(character).catch(error => {
+            strokeDataCache.delete(character);
+            throw error;
+          });
+          strokeDataCache.set(character, request);
+        }
+        return strokeDataCache.get(character);
+      }
+
+      function makeStrokeStep(strokes, stepIndex, stepSize) {
+        const cell = document.createElement('div');
+        cell.className = 'stroke-step';
+        cell.style.setProperty('--stroke-step-size', `${stepSize}mm`);
+
+        const number = document.createElement('span');
+        number.className = 'stroke-step-number';
+        number.textContent = String(stepIndex + 1);
+        cell.appendChild(number);
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '100');
+        svg.setAttribute('height', '100');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('aria-hidden', 'true');
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const transform = window.HanziWriter.getScalingTransform(100, 100, 5);
+        group.setAttribute('transform', transform.transform);
+
+        for (let index = 0; index <= stepIndex; index++) {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', strokes[index]);
+          path.setAttribute('fill', index === stepIndex ? '#27352f' : '#b7bec1');
+          group.appendChild(path);
+        }
+        svg.appendChild(group);
+        cell.appendChild(svg);
+        return cell;
+      }
+
+      async function renderStrokeGuide(container, word, version) {
+        const uniqueCharacters = [...new Set(Array.from(word))];
+        try {
+          const loaded = await Promise.all(uniqueCharacters.map(async character => ({
+            character,
+            data: await loadStrokeData(character)
+          })));
+          if (version !== renderVersion || !container.isConnected) return;
+          container.replaceChildren();
+
+          const heading = document.createElement('div');
+          heading.className = 'stroke-guide-heading';
+          heading.textContent = 'Порядок черт';
+          container.appendChild(heading);
+
+          loaded.forEach(({ character, data }) => {
+            const strokes = data && Array.isArray(data.strokes) ? data.strokes : [];
+            const row = document.createElement('div');
+            row.className = 'stroke-guide-character';
+            const glyph = document.createElement('span');
+            glyph.className = 'stroke-guide-glyph';
+            glyph.textContent = character;
+            row.appendChild(glyph);
+
+            if (!strokes.length) {
+              const unavailable = document.createElement('span');
+              unavailable.className = 'stroke-guide-status';
+              unavailable.textContent = 'Данные черт недоступны';
+              row.appendChild(unavailable);
+              container.appendChild(row);
+              return;
+            }
+
+            const sequence = document.createElement('div');
+            sequence.className = 'stroke-guide-sequence';
+            const availableWidth = 172;
+            const gap = 0.55;
+            const stepSize = Math.min(9, (availableWidth - gap * (strokes.length - 1)) / strokes.length);
+            strokes.forEach((_, index) => sequence.appendChild(makeStrokeStep(strokes, index, stepSize)));
+            row.appendChild(sequence);
+            container.appendChild(row);
+          });
+        } catch (error) {
+          if (version !== renderVersion || !container.isConnected) return;
+          container.replaceChildren();
+          const message = document.createElement('div');
+          message.className = 'stroke-guide-status error';
+          message.textContent = 'Не удалось загрузить порядок черт. Проверьте интернет и обновите прописи.';
+          container.appendChild(message);
+          console.warn('Не удалось загрузить схему порядка черт для слова:', word, error);
+        }
+      }
+
+      function makeWordBlock(word, columns, totalRows, sampleRows, sampleCopies, showPinyin, showTranslation, solidFirst, showStrokeGuide, version, strokeGuideTasks) {
         const block = document.createElement('section');
         block.className = 'word-block';
         const chars = Array.from(word);
@@ -562,6 +749,17 @@
           rule.className = 'translation-rule';
           translation.append(label, rule);
           block.appendChild(translation);
+        }
+
+        if (showStrokeGuide) {
+          const guide = document.createElement('div');
+          guide.className = 'stroke-guide';
+          const loading = document.createElement('div');
+          loading.className = 'stroke-guide-status';
+          loading.textContent = 'Загружаем порядок черт…';
+          guide.appendChild(loading);
+          block.appendChild(guide);
+          strokeGuideTasks.push(renderStrokeGuide(guide, word, version));
         }
 
         for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
@@ -685,6 +883,8 @@
       }
 
       function render() {
+        const version = ++renderVersion;
+        pendingStrokeGuideTasks = Promise.resolve();
         const words = parseWords($('words').value);
         const stage = $('previewStage');
         const status = $('status');
@@ -696,6 +896,7 @@
         const columns = Math.floor(180 / cellSize);
         const showPinyin = $('showPinyin').checked;
         const showTranslation = $('showTranslation').checked;
+        const showStrokeGuide = $('showStrokeGuide').checked;
         const solidFirst = $('solidFirst').checked;
         const gridStyle = $('gridStyle').value;
         const fontStyle = $('fontStyle').value;
@@ -749,9 +950,14 @@
           const maxCopies = Math.max(1, Math.floor(columns / Array.from(word).length));
           return fillRow ? maxCopies : Math.min(requestedCopies, maxCopies);
         });
-        const groupHeight = cellSize * totalRows + (showPinyin ? 5 * sampleRows : 0) + (showTranslation ? 8 : 0) + 4;
+        const maxStrokeGuideRows = showStrokeGuide
+          ? Math.max(0, ...words.map(word => new Set(Array.from(word)).size))
+          : 0;
+        const groupHeight = cellSize * totalRows + (showPinyin ? 5 * sampleRows : 0)
+          + (showTranslation ? 8 : 0) + (showStrokeGuide ? maxStrokeGuideRows * 10 + 4 : 0) + 4;
         const groupsPerPage = Math.max(1, Math.floor(258 / groupHeight));
         const pages = [];
+        const strokeGuideTasks = [];
         for (let i = 0; i < words.length; i += groupsPerPage) {
           pages.push(words.slice(i, i + groupsPerPage).map((word, localIndex) => ({ word, copies: copiesByWord[i + localIndex] })));
         }
@@ -773,7 +979,8 @@
           const content = document.createElement('div');
           content.className = 'sheet-content';
           pageWords.forEach(({ word, copies }) => content.appendChild(makeWordBlock(
-            word, columns, totalRows, sampleRows, copies, showPinyin, showTranslation, solidFirst
+            word, columns, totalRows, sampleRows, copies, showPinyin, showTranslation, solidFirst,
+            showStrokeGuide, version, strokeGuideTasks
           )));
           sheet.appendChild(content);
 
@@ -783,6 +990,7 @@
           sheet.appendChild(footer);
           stage.appendChild(sheet);
         });
+        pendingStrokeGuideTasks = Promise.all(strokeGuideTasks);
 
         const totalCopies = copiesByWord.reduce((sum, count) => sum + count * sampleRows, 0);
         $('previewMeta').textContent = `${words.length} слов · ${pages.length} ${pages.length === 1 ? 'страница' : pages.length < 5 ? 'страницы' : 'страниц'} · ${columns} клеток в строке`;
@@ -794,7 +1002,8 @@
           status.textContent = `Готово: ${words.length} слов. ${copyNote} Автоматический пиньинь ограничен встроенным словарём; подключитесь к интернету для полного словаря.`;
           status.className = 'status';
         } else {
-          status.textContent = `Готово: ${words.length} слов, ${totalCopies} повторений образцов, ${totalRows - sampleRows} пустых строк на слово. ${copyNote}`;
+          const guideNote = showStrokeGuide ? ' Схемы порядка черт добавлены перед прописями.' : '';
+          status.textContent = `Готово: ${words.length} слов, ${totalCopies} повторений образцов, ${totalRows - sampleRows} пустых строк на слово. ${copyNote}${guideNote}`;
           status.className = 'status';
         }
       }
@@ -805,6 +1014,10 @@
         const button = $('downloadPdfBtn');
         const status = $('status');
         render();
+        if ($('showStrokeGuide').checked) {
+          status.textContent = 'Загружаем схемы порядка черт перед созданием PDF…';
+          await pendingStrokeGuideTasks;
+        }
         const sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
         if (!sheets.length) {
           status.textContent = 'Сначала добавьте китайские слова, чтобы сформировать PDF.';
@@ -864,7 +1077,7 @@
         $('words').value = sampleWords;
         render();
       });
-      ['sampleCopies','totalRows','sampleRows','fillRow','cellSize','gridStyle','fontStyle','traceColor','traceOpacity','showPinyin','showTranslation','solidFirst'].forEach(id => {
+      ['sampleCopies','totalRows','sampleRows','fillRow','cellSize','gridStyle','fontStyle','traceColor','traceOpacity','showPinyin','showTranslation','showStrokeGuide','solidFirst'].forEach(id => {
         $(id).addEventListener('change', render);
         $(id).addEventListener('input', render);
       });

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5f0">
   <meta name="description" content="Генератор китайских прописей: чёткий PDF, гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
-  <title>Hanzi Practice 4.2 — китайские прописи</title>
+  <title>Hanzi Practice 4.3 — китайские прописи</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,7 @@
       --accent: #315b50;
       --accent-dark: #24483f;
       --accent-soft: #e6efeb;
-      --cell-line: #b9c0c5;
+      --cell-line: #c9d0d3;
     }
     * { box-sizing: border-box; }
     body {
@@ -175,7 +175,7 @@
        the worksheet crisp in html2canvas/jsPDF and in browser printing. */
     .cell {
       width: var(--cell-size); height: var(--cell-size); position: relative; display: grid; place-items: center;
-      border: .22mm solid var(--cell-line); background: #fff; overflow: hidden;
+      border: .18mm solid var(--cell-line); background: #fff; overflow: hidden;
     }
     .grid-overlay {
       position: absolute; inset: 0; width: 100%; height: 100%;
@@ -230,7 +230,7 @@
       width: var(--stroke-step-size);
       height: var(--stroke-step-size);
       min-width: 0;
-      border: .2mm solid #b9c0c5;
+      border: .18mm solid #d4dadd;
       background: #fff;
       overflow: hidden;
     }
@@ -304,7 +304,7 @@
         <div class="brand-mark">汉</div>
         <div>
           <h1>Hanzi Practice</h1>
-          <p>Китайские прописи · слова целиком · версия 4.1</p>
+          <p>Китайские прописи · слова целиком · версия 4.3</p>
         </div>
       </div>
       <div class="top-note">Листы A4 · гибкая компактность · пиньинь · PDF</div>
@@ -648,27 +648,33 @@
         details.open = wasOpen;
       }
 
-      function makeGridOverlay(gridStyle = 'tianzige', color = '#b9c0c5', strokeWidth = 2.2) {
+      function makeGridOverlay(gridStyle = 'tianzige', color = '#d9dee0', strokeWidth = 1.45) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'grid-overlay');
         svg.setAttribute('viewBox', '0 0 100 100');
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('aria-hidden', 'true');
+        // The cell boundary remains the clearest guide. Inner guides are softer,
+        // and the diagonal lines in 米字格 are lighter still so they don't compete
+        // with the character being practised.
         const lines = [
-          [50, 0, 50, 100],
-          [0, 50, 100, 50]
+          { coords: [50, 0, 50, 100], color, width: strokeWidth },
+          { coords: [0, 50, 100, 50], color, width: strokeWidth }
         ];
         if (gridStyle === 'mi') {
-          lines.push([0, 0, 100, 100], [0, 100, 100, 0]);
+          lines.push(
+            { coords: [0, 0, 100, 100], color: '#e8ecee', width: Math.max(0.9, strokeWidth * 0.78) },
+            { coords: [0, 100, 100, 0], color: '#e8ecee', width: Math.max(0.9, strokeWidth * 0.78) }
+          );
         }
-        lines.forEach(([x1, y1, x2, y2]) => {
+        lines.forEach(({ coords: [x1, y1, x2, y2], color: lineColor, width }) => {
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           line.setAttribute('x1', x1);
           line.setAttribute('y1', y1);
           line.setAttribute('x2', x2);
           line.setAttribute('y2', y2);
-          line.setAttribute('stroke', color);
-          line.setAttribute('stroke-width', strokeWidth);
+          line.setAttribute('stroke', lineColor);
+          line.setAttribute('stroke-width', width);
           line.setAttribute('stroke-linecap', 'butt');
           svg.appendChild(line);
         });
@@ -678,7 +684,7 @@
       function makeCell(character = '', sampleMode = '', gridStyle = 'tianzige') {
         const cell = document.createElement('div');
         cell.className = 'cell';
-        cell.appendChild(makeGridOverlay(gridStyle, '#b9c0c5', 2.2));
+        cell.appendChild(makeGridOverlay(gridStyle, '#d9dee0', 1.45));
         if (character) {
           if (sampleMode) cell.classList.add('sample', sampleMode === 'solid' ? 'solid-sample' : 'trace-sample');
           const glyph = document.createElement('span');
@@ -730,7 +736,7 @@
         const cell = document.createElement('div');
         cell.className = 'stroke-step';
         cell.style.setProperty('--stroke-step-size', `${stepSize}mm`);
-        cell.appendChild(makeGridOverlay(gridStyle, '#d6dadd', 1.2));
+        cell.appendChild(makeGridOverlay(gridStyle, '#e3e7e9', 1.0));
 
         const number = document.createElement('span');
         number.className = 'stroke-step-number';

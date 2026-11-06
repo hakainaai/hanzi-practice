@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5f0">
-  <meta name="description" content="Генератор китайских прописей: чёткий PDF, гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
-  <title>Hanzi Practice 4.3 — китайские прописи</title>
+  <meta name="description" content="Генератор китайских прописей: сохранение PDF, гибкая плотность листа, примеры в нескольких строках, пиньинь, перевод и порядок черт.">
+  <title>Hanzi Practice 4.8 — китайские прописи</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,8 +21,6 @@
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -101,6 +99,15 @@
     .btn-secondary:hover { background: var(--accent-soft); }
     .status { margin-top: 13px; min-height: 30px; color: var(--muted); font-size: 11px; line-height: 1.5; }
     .status.error { color: #a43e36; }
+    .pdf-help { margin: 10px 0 0; }
+    .pdf-fallback { margin-top: 10px; padding: 11px 12px; border: 1px solid #e5ebe7; border-radius: 11px; background: #fbfcfb; }
+    .pdf-help-link { color: var(--accent); font-size: 11px; font-weight: 700; line-height: 1.5; text-decoration: underline; text-underline-offset: 2px; }
+    .pdf-help-details { margin-top: 9px; }
+    .pdf-help-details summary { color: #344052; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .pdf-help-details ol { margin: 9px 0 0; padding-left: 20px; color: #59645f; font-size: 11px; line-height: 1.65; }
+    .pdf-help-details li { margin: 0 0 6px; padding-left: 2px; }
+    .pdf-print-tip, .pdf-print-note { margin: 9px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .pdf-print-tip { padding: 8px 9px; border-radius: 8px; background: #f0f4f1; }
     .advanced { margin-top: 17px; border: 1px solid #e7ece9; border-radius: 12px; padding: 11px 12px; background: #fbfcfb; }
     .advanced summary { color: #344052; font-size: 12px; font-weight: 700; cursor: pointer; }
     .advanced-note { margin: 8px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.5; }
@@ -286,14 +293,34 @@
       .strokes-panel { grid-column: auto; }
     }
     @media print {
+      /* Safari fix: use one page-break instruction per sheet transition.
+       * Combining modern break-before with legacy page-break-before caused
+       * Safari to insert a blank page between worksheets.
+       */
       @page { size: A4 portrait; margin: 0; }
       html, body { width: 210mm; margin: 0 !important; padding: 0 !important; background: #fff !important; }
       body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .app-shell { max-width: none; margin: 0; padding: 0; }
       .topbar, .controls, .preview-head, .legend, .strokes-panel { display: none !important; }
       .layout, .preview-panel, .preview-stage { display: block; margin: 0; padding: 0; border: 0; box-shadow: none; overflow: visible; background: #fff; }
-      .sheet { width: 210mm; height: 297mm; min-height: 297mm; margin: 0; padding: var(--page-top, 11mm) 15mm var(--page-bottom, 10mm); box-shadow: none; break-after: page; page-break-after: always; }
-      .sheet:last-child { break-after: auto; page-break-after: auto; }
+      .sheet {
+        width: 210mm;
+        height: 296mm;
+        min-height: 296mm;
+        max-height: 296mm;
+        box-sizing: border-box;
+        margin: 0;
+        padding: var(--page-top, 11mm) 15mm var(--page-bottom, 10mm);
+        box-shadow: none;
+        overflow: hidden;
+        /* Use only legacy paged-media properties in Safari.
+           Do not combine break-* with page-break-* here:
+           Safari was inserting an extra blank page between sheets. */
+        page-break-inside: avoid;
+      }
+      .sheet + .sheet {
+        page-break-before: always;
+      }
     }
   </style>
 </head>
@@ -304,10 +331,10 @@
         <div class="brand-mark">汉</div>
         <div>
           <h1>Hanzi Practice</h1>
-          <p>Китайские прописи · слова целиком · версия 4.3</p>
+          <p>Китайские прописи · слова целиком · версия 4.8</p>
         </div>
       </div>
-      <div class="top-note">Листы A4 · гибкая компактность · пиньинь · PDF</div>
+      <div class="top-note">Листы A4 · гибкая компактность · пиньинь · два способа сохранения PDF</div>
     </header>
 
     <div class="layout">
@@ -464,8 +491,23 @@
 
         <div class="actions">
           <button class="btn btn-secondary" id="generateBtn" type="button">Обновить прописи</button>
-          <button class="btn btn-download" id="downloadPdfBtn" type="button">Скачать PDF</button>
+          <button class="btn btn-download" id="downloadPdfBtn" type="button">Сохранить PDF</button>
           <button class="btn btn-secondary" id="printBtn" type="button">Печать</button>
+        </div>
+        <div class="pdf-fallback">
+          <a class="pdf-help-link" href="#pdfPrintHelp" id="pdfHelpLink">Если файл большой и долго формируется — сохранить PDF через печать</a>
+          <details class="pdf-help-details" id="pdfPrintHelp">
+            <summary>Показать простую инструкцию для Safari</summary>
+            <ol>
+              <li>Нажмите кнопку <b>«Печать»</b> рядом с кнопкой «Сохранить PDF».</li>
+              <li>Откроется окно печати. Найдите внизу слева кнопку <b>«PDF»</b> и нажмите на неё.</li>
+              <li>В появившемся списке выберите <b>«Сохранить как PDF»</b>.</li>
+              <li>В новом окне выберите папку, куда сохранить файл. Например, <b>«Загрузки»</b> или <b>«Рабочий стол»</b>.</li>
+              <li>Нажмите синюю кнопку <b>«Сохранить»</b>. Готово — PDF-файл появится в выбранной папке.</li>
+            </ol>
+            <p class="pdf-print-tip"><b>Если видите дополнительные настройки:</b> выберите бумагу A4, книжную ориентацию и масштаб 100%. В окне печати не нажимайте «Печать» — сначала откройте меню «PDF» и выберите «Сохранить как PDF».</p>
+          </details>
+          <p class="pdf-print-note">Для большого количества страниц прямое сохранение может занять несколько минут. Не закрывайте вкладку, пока идёт создание файла. Если Safari начинает тормозить, используйте инструкцию выше.</p>
         </div>
         <div class="status" id="status" role="status" aria-live="polite">Готово к работе. Пиньинь загружается…</div>
       </aside>
@@ -723,7 +765,19 @@
           return Promise.reject(new Error('Библиотека Hanzi Writer ещё не загружена.'));
         }
         if (!strokeDataCache.has(character)) {
-          const request = window.HanziWriter.loadCharacterData(character).catch(error => {
+          // Do not let a stalled CDN request freeze PDF export indefinitely.
+          const request = new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              reject(new Error(`Истекло время ожидания данных для ${character}.`));
+            }, 12000);
+            window.HanziWriter.loadCharacterData(character).then(data => {
+              clearTimeout(timeoutId);
+              resolve(data);
+            }).catch(error => {
+              clearTimeout(timeoutId);
+              reject(error);
+            });
+          }).catch(error => {
             strokeDataCache.delete(character);
             throw error;
           });
@@ -1111,68 +1165,203 @@
 
       $('generateBtn').addEventListener('click', render);
 
-      $('downloadPdfBtn').addEventListener('click', async () => {
+      let pdfLibrariesPromise = null;
+
+      function loadPdfLibrary(src, globalReady, libraryName) {
+        if (globalReady()) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.dataset.hanziPdfLibrary = libraryName;
+          script.onload = () => globalReady()
+            ? resolve()
+            : reject(new Error(`Библиотека ${libraryName} загрузилась некорректно.`));
+          script.onerror = () => reject(new Error(`Не удалось загрузить ${libraryName}. Проверьте подключение к интернету.`));
+          document.head.appendChild(script);
+        });
+      }
+
+      async function ensurePdfLibraries() {
+        if (!pdfLibrariesPromise) {
+          pdfLibrariesPromise = (async () => {
+            await loadPdfLibrary(
+              'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+              () => typeof window.html2canvas === 'function',
+              'html2canvas'
+            );
+            await loadPdfLibrary(
+              'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+              () => !!(window.jspdf && window.jspdf.jsPDF),
+              'jsPDF'
+            );
+          })().catch(error => {
+            pdfLibrariesPromise = null;
+            throw error;
+          });
+        }
+        return pdfLibrariesPromise;
+      }
+
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+      async function downloadPdfDirect() {
         const button = $('downloadPdfBtn');
         const status = $('status');
-        render();
-        if ($('showStrokeGuide').checked) {
-          status.textContent = 'Загружаем схемы порядка черт перед созданием PDF…';
-          await pendingStrokeGuideTasks;
-        }
-        const sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
-        if (!sheets.length) {
-          status.textContent = 'Сначала добавьте китайские слова, чтобы сформировать PDF.';
-          status.className = 'status error';
-          return;
-        }
-        if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
-          status.textContent = 'Не удалось загрузить модуль PDF. Проверьте подключение к интернету и обновите страницу.';
-          status.className = 'status error';
-          return;
-        }
+        if (button.disabled) return;
 
         const originalLabel = button.textContent;
         button.disabled = true;
-        button.textContent = 'Создаём PDF…';
-        status.textContent = `Подготавливаем ${sheets.length} ${sheets.length === 1 ? 'страницу' : 'страницы'} к скачиванию…`;
-        status.className = 'status';
 
         try {
-          if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          const { jsPDF } = window.jspdf;
-          const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-
-          for (let index = 0; index < sheets.length; index++) {
-            const canvas = await window.html2canvas(sheets[index], {
-              scale: 3,
-              backgroundColor: '#ffffff',
-              useCORS: true,
-              logging: false,
-              scrollX: 0,
-              scrollY: 0
-            });
-            const image = canvas.toDataURL('image/png');
-            if (index > 0) pdf.addPage('a4', 'portrait');
-            pdf.addImage(image, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
-            status.textContent = `Готовим PDF: страница ${index + 1} из ${sheets.length}…`;
+          if (!$('previewStage').querySelector('.sheet')) render();
+          let sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
+          if (!sheets.length) {
+            status.textContent = 'Сначала добавьте китайские слова, чтобы сформировать листы.';
+            status.className = 'status error';
+            return;
           }
 
-          pdf.save('hanzi-practice.pdf');
-          status.textContent = `PDF готов: ${sheets.length} ${sheets.length === 1 ? 'страница сохранена' : 'страниц сохранено'}.`;
+          status.textContent = 'Подключаем модуль создания PDF…';
+          status.className = 'status';
+          button.textContent = 'Подключаем PDF…';
+          await ensurePdfLibraries();
+
+          if ($('showStrokeGuide').checked) {
+            button.textContent = 'Подготавливаем схемы…';
+            status.textContent = 'Подготавливаем схемы порядка черт. Если некоторые схемы не загрузятся, экспорт всё равно продолжится.';
+            await Promise.race([pendingStrokeGuideTasks, wait(12000)]);
+          }
+
+          if (document.fonts && document.fonts.ready) {
+            await Promise.race([document.fonts.ready, wait(7000)]);
+          }
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+          // Refresh the list after async stroke-guide rendering.
+          sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
+          if (!sheets.length) throw new Error('Не найдены страницы прописей.');
+
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true,
+            putOnlyUsedFonts: true
+          });
+
+          const exportScale = 1.5;
+          const total = sheets.length;
+
+          for (let index = 0; index < total; index++) {
+            const sheet = sheets[index];
+            button.textContent = `PDF: ${index + 1}/${total}`;
+            status.textContent = `Создаём PDF: страница ${index + 1} из ${total}. Не закрывайте эту вкладку.`;
+            status.className = 'status';
+
+            // Capture only one sheet at a time. JPEG at moderate quality keeps
+            // memory use much lower than storing full-size PNGs for every page.
+            const rect = sheet.getBoundingClientRect();
+            const captureWidth = Math.max(1, Math.ceil(rect.width));
+            const captureHeight = Math.max(1, Math.ceil(rect.height));
+            const canvas = await window.html2canvas(sheet, {
+              backgroundColor: '#ffffff',
+              scale: exportScale,
+              useCORS: true,
+              allowTaint: false,
+              logging: false,
+              imageTimeout: 10000,
+              width: captureWidth,
+              height: captureHeight,
+              windowWidth: Math.max(document.documentElement.clientWidth, captureWidth),
+              windowHeight: Math.max(document.documentElement.clientHeight, captureHeight),
+              scrollX: 0,
+              scrollY: 0,
+              removeContainer: true
+            });
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.92);
+            if (index > 0) pdf.addPage('a4', 'portrait');
+            pdf.addImage(imageData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+
+            // Release the large canvas before moving to the next page.
+            canvas.width = 1;
+            canvas.height = 1;
+
+            // Give Safari time to update the progress message and process input.
+            await wait(35);
+          }
+
+          status.textContent = 'PDF готов. Сохраняем файл…';
+          button.textContent = 'Сохраняем…';
+          const date = new Date().toISOString().slice(0, 10);
+          pdf.save(`Hanzi-Practice-${date}.pdf`);
+
+          status.textContent = `Готово! PDF из ${total} страниц сохранён. Проверьте папку «Загрузки».`;
           status.className = 'status';
         } catch (error) {
           console.error('Не удалось создать PDF:', error);
-          status.textContent = 'Не удалось создать PDF. Попробуйте обновить страницу или воспользоваться кнопкой «Печать». ' + (error && error.message ? error.message : '');
+          status.textContent = 'Не удалось автоматически создать PDF. Попробуйте запасной способ через кнопку «Печать» и инструкцию ниже. ' + (error && error.message ? error.message : '');
+          status.className = 'status error';
+          $('pdfPrintHelp').open = true;
+        } finally {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
+
+      async function openPrintDialog() {
+        const button = $('printBtn');
+        const status = $('status');
+        if (button.disabled) return;
+
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Подготавливаем печать…';
+
+        try {
+          if (!$('previewStage').querySelector('.sheet')) render();
+          const sheets = Array.from($('previewStage').querySelectorAll('.sheet'));
+          if (!sheets.length) {
+            status.textContent = 'Сначала добавьте китайские слова, чтобы сформировать листы.';
+            status.className = 'status error';
+            return;
+          }
+
+          if ($('showStrokeGuide').checked) {
+            button.textContent = 'Загружаем схемы…';
+            status.textContent = 'Подготавливаем схемы порядка черт…';
+            status.className = 'status';
+            await Promise.race([pendingStrokeGuideTasks, wait(12000)]);
+          }
+
+          if (document.fonts && document.fonts.ready) {
+            await Promise.race([document.fonts.ready, wait(5000)]);
+          }
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+          status.textContent = 'Открылось системное окно печати. Чтобы получить файл, выберите PDF → Сохранить как PDF.';
+          status.className = 'status';
+          button.textContent = 'Открываем печать…';
+          await wait(100);
+          window.print();
+        } catch (error) {
+          console.error('Не удалось подготовить печать:', error);
+          status.textContent = 'Не удалось подготовить листы к печати. Обновите прописи и попробуйте ещё раз. ' + (error && error.message ? error.message : '');
           status.className = 'status error';
         } finally {
           button.disabled = false;
           button.textContent = originalLabel;
         }
-      });
+      }
 
-      $('printBtn').addEventListener('click', () => {
-        if (!$('previewStage').querySelector('.sheet')) render();
-        if ($('previewStage').querySelector('.sheet')) window.print();
+      $('downloadPdfBtn').addEventListener('click', downloadPdfDirect);
+      $('printBtn').addEventListener('click', openPrintDialog);
+      $('pdfHelpLink').addEventListener('click', event => {
+        event.preventDefault();
+        $('pdfPrintHelp').open = true;
+        $('pdfPrintHelp').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
       $('exampleBtn').addEventListener('click', () => {
         $('words').value = sampleWords;
